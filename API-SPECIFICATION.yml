@@ -1,0 +1,332 @@
+openapi: 3.0.3
+info:
+  title: RAG PoC API
+  description: |
+    API for Retrieval-Augmented Generation proof-of-concept application.
+    Supports document upload, query processing, conversation management, and feedback collection.
+  version: 1.0.0
+  contact:
+    name: RAG PoC Team
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: http://localhost:8000
+    description: Production server (update URL)
+
+tags:
+  - name: Documents
+    description: Document upload and management
+  - name: Conversations
+    description: Query processing and conversation management
+  - name: Feedback
+    description: User feedback collection
+
+paths:
+  /:
+    get:
+      summary: Health check
+      description: Returns API health status
+      operationId: healthCheck
+      tags: []
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: RAG PoC API is running
+
+  /documents/upload:
+    post:
+      summary: Upload document
+      description: |
+        Upload a document (PDF, DOCX, or MD) for processing.
+        Document is processed in the background (text extraction, chunking, embedding, indexing).
+      operationId: uploadDocument
+      tags:
+        - Documents
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Document file (PDF, DOCX, or MD)
+      responses:
+        '200':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentUploadResponse'
+        '400':
+          description: Invalid file type or missing file
+        '500':
+          description: Server error during upload
+
+  /conversations/query:
+    post:
+      summary: Submit RAG query
+      description: |
+        Submit a query and receive an AI-generated answer with source citations.
+        Creates a new conversation thread if conversation_id is not provided.
+        Uses conversation history for context-aware responses.
+      operationId: queryRAG
+      tags:
+        - Conversations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Query processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+        '400':
+          description: Invalid request
+        '500':
+          description: Server error during processing
+
+  /conversations/{conversation_id}:
+    get:
+      summary: Get conversation
+      description: Retrieve a conversation thread by ID
+      operationId: getConversation
+      tags:
+        - Conversations
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          description: Conversation identifier
+          schema:
+            type: string
+            example: conv_abc123def456
+      responses:
+        '200':
+          description: Conversation retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '404':
+          description: Conversation not found
+        '500':
+          description: Server error
+
+  /feedback:
+    post:
+      summary: Submit feedback
+      description: |
+        Submit feedback (HELPFUL or NOT_HELPFUL) for a specific query response.
+        NOT_HELPFUL feedback triggers expert escalation workflow.
+      operationId: submitFeedback
+      tags:
+        - Feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+      responses:
+        '200':
+          description: Feedback recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: feedback_recorded
+        '400':
+          description: Invalid request
+        '404':
+          description: Conversation or turn not found
+        '500':
+          description: Server error
+
+components:
+  schemas:
+    DocumentUploadResponse:
+      type: object
+      required:
+        - document_id
+        - status
+      properties:
+        document_id:
+          type: string
+          description: Unique document identifier
+          example: doc_abc123def456
+        status:
+          type: string
+          description: Processing status
+          example: processing
+          enum:
+            - processing
+
+    QueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: User's question
+          example: What is retrieval-augmented generation?
+        conversation_id:
+          type: string
+          nullable: true
+          description: Existing conversation ID (optional, creates new if not provided)
+          example: conv_abc123def456
+
+    QueryResponse:
+      type: object
+      required:
+        - answer
+        - sources
+        - conversation_id
+      properties:
+        answer:
+          type: string
+          description: Generated answer
+          example: Retrieval-Augmented Generation (RAG) is a technique that combines...
+        sources:
+          type: array
+          description: Source citations
+          items:
+            $ref: '#/components/schemas/SourceCitation'
+        conversation_id:
+          type: string
+          description: Conversation identifier
+          example: conv_abc123def456
+
+    SourceCitation:
+      type: object
+      required:
+        - document
+        - chunk_id
+        - content
+        - score
+      properties:
+        document:
+          type: string
+          description: Source document filename
+          example: rag_overview.md
+        chunk_id:
+          type: string
+          description: Unique chunk identifier
+          example: doc_abc123_chunk_0
+        content:
+          type: string
+          description: Chunk content preview
+          example: Retrieval-Augmented Generation (RAG) is a powerful technique...
+        score:
+          type: number
+          format: float
+          description: Relevance score (0-1)
+          example: 0.85
+          minimum: 0
+          maximum: 1
+
+    FeedbackRequest:
+      type: object
+      required:
+        - conversation_id
+        - turn_index
+        - feedback_type
+      properties:
+        conversation_id:
+          type: string
+          description: Conversation identifier
+          example: conv_abc123def456
+        turn_index:
+          type: integer
+          description: Index of the turn in the conversation
+          example: 0
+          minimum: 0
+        feedback_type:
+          type: string
+          description: Type of feedback
+          enum:
+            - HELPFUL
+            - NOT_HELPFUL
+          example: HELPFUL
+
+    Conversation:
+      type: object
+      required:
+        - _id
+        - created_at
+        - turns
+      properties:
+        _id:
+          type: string
+          description: Conversation identifier
+          example: conv_abc123def456
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: '2025-01-11T10:00:00.000Z'
+        turns:
+          type: array
+          description: Conversation turns
+          items:
+            $ref: '#/components/schemas/ConversationTurn'
+
+    ConversationTurn:
+      type: object
+      required:
+        - query
+        - answer
+        - sources
+        - timestamp
+      properties:
+        query:
+          type: string
+          description: User's question
+          example: What is RAG?
+        answer:
+          type: string
+          description: Generated answer
+          example: Retrieval-Augmented Generation...
+        sources:
+          type: array
+          description: Source citations
+          items:
+            $ref: '#/components/schemas/SourceCitation'
+        timestamp:
+          type: string
+          format: date-time
+          description: Turn timestamp
+          example: '2025-01-11T10:00:05.123Z'
+        feedback:
+          type: string
+          nullable: true
+          description: User feedback (if provided)
+          enum:
+            - HELPFUL
+            - NOT_HELPFUL
+          example: HELPFUL
+

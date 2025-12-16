@@ -1,0 +1,28 @@
+[
+  {
+    "query": "What is retrieval-augmented generation?",
+    "expected_keywords": ["retrieval", "generation", "LLM", "context"],
+    "category": "concept"
+  },
+  {
+    "query": "Explain vector databases",
+    "expected_keywords": ["embeddings", "similarity", "search", "vectors"],
+    "category": "technical"
+  },
+  {
+    "query": "How does semantic search work?",
+    "expected_keywords": ["embeddings", "meaning", "similarity", "semantic"],
+    "category": "technical"
+  },
+  {
+    "query": "What are the benefits of using RAG?",
+    "expected_keywords": ["accuracy", "context", "hallucination", "knowledge"],
+    "category": "concept"
+  },
+  {
+    "query": "What is FAISS used for?",
+    "expected_keywords": ["similarity", "search", "vectors", "efficient"],
+    "category": "technical"
+  }
+]
+

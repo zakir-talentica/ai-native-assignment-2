@@ -1,0 +1,202 @@
+{
+  "info": {
+    "name": "RAG PoC API",
+    "description": "Postman collection for RAG PoC API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": [""]
+        },
+        "description": "Check if API is running"
+      },
+      "response": []
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "PDF, DOCX, or MD file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8000/documents/upload",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["documents", "upload"]
+            },
+            "description": "Upload a document for processing"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Conversations",
+      "item": [
+        {
+          "name": "Submit Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What is retrieval-augmented generation?\",\n  \"conversation_id\": null\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/conversations/query",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["conversations", "query"]
+            },
+            "description": "Submit a query and get RAG response"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Query with Conversation ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Can you tell me more about that?\",\n  \"conversation_id\": \"conv_abc123def456\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/conversations/query",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["conversations", "query"]
+            },
+            "description": "Submit a follow-up query in existing conversation"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/conversations/{{conversation_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["conversations", "{{conversation_id}}"],
+              "variable": [
+                {
+                  "key": "conversation_id",
+                  "value": "conv_abc123def456"
+                }
+              ]
+            },
+            "description": "Retrieve a conversation by ID"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "Submit HELPFUL Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversation_id\": \"conv_abc123def456\",\n  \"turn_index\": 0,\n  \"feedback_type\": \"HELPFUL\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/feedback",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["feedback"]
+            },
+            "description": "Submit helpful feedback for a response"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit NOT_HELPFUL Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversation_id\": \"conv_abc123def456\",\n  \"turn_index\": 0,\n  \"feedback_type\": \"NOT_HELPFUL\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/feedback",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["feedback"]
+            },
+            "description": "Submit not helpful feedback (triggers escalation)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "conversation_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
+
