@@ -3,7 +3,7 @@ RAGAS Evaluation Script for RAG PoC
 
 This script evaluates the RAG system using RAGAS metrics.
 Note: Install ragas and datasets packages:
-    pip install ragas datasets
+    pip install ragas datasets python-dotenv langchain-openai
 """
 
 import json
@@ -14,13 +14,37 @@ from typing import List, Dict
 # Add parent directory to path to import backend modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Try loading from root directory first, then evaluation directory
+    load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'backend', '.env'))
+    load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+except ImportError:
+    print("Warning: python-dotenv not installed. Install with: pip install python-dotenv")
+    print("Make sure OPENAI_API_KEY is set as an environment variable.")
+
+# Verify API key is set
+if not os.getenv('OPENAI_API_KEY'):
+    print("="*60)
+    print("ERROR: OPENAI_API_KEY not found!")
+    print("="*60)
+    print("Please either:")
+    print("1. Set OPENAI_API_KEY as an environment variable, or")
+    print("2. Create a .env file in the project root with:")
+    print("   OPENAI_API_KEY=your_api_key_here")
+    print("\nYou can copy env.example to .env and update it.")
+    sys.exit(1)
+
 try:
     from ragas import evaluate
     from ragas.metrics import faithfulness, answer_relevancy, context_recall, context_precision
     from datasets import Dataset
-except ImportError:
+    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+except ImportError as e:
     print("Error: Please install required packages:")
-    print("  pip install ragas datasets")
+    print("  pip install ragas datasets python-dotenv langchain-openai")
+    print(" error: ", e)
     sys.exit(1)
 
 
@@ -64,6 +88,10 @@ def prepare_evaluation_dataset(
 
 def run_evaluation(dataset: Dataset, metrics: List = None) -> dict:
     """Run RAGAS evaluation on the dataset."""
+    # Configure embeddings and LLM for RAGAS
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.getenv('OPENAI_API_KEY'))
+    llm = ChatOpenAI(model="gpt-4.1", openai_api_key=os.getenv('OPENAI_API_KEY'))
+    
     if metrics is None:
         # Use default metrics
         metrics = [
@@ -79,7 +107,9 @@ def run_evaluation(dataset: Dataset, metrics: List = None) -> dict:
     
     results = evaluate(
         dataset,
-        metrics=metrics
+        metrics=metrics,
+        embeddings=embeddings,
+        llm=llm
     )
     
     return results
@@ -149,18 +179,13 @@ def main():
         print("EVALUATION RESULTS")
         print("="*60)
         print(results)
-        print("\n")
-        
-        # Print individual metrics
-        for metric_name, score in results.items():
-            if isinstance(score, (int, float)):
-                print(f"{metric_name}: {score:.4f}")
-        
         print("="*60)
         print("Evaluation complete!")
         
     except Exception as e:
         print(f"Error during evaluation: {str(e)}")
+        import traceback
+        traceback.print_exc()
         print("\nNote: Make sure you have set OPENAI_API_KEY environment variable")
         print("RAGAS uses OpenAI models for evaluation metrics.")
 
