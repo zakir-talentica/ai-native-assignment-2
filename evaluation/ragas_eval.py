@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 try:
     from dotenv import load_dotenv
     # Try loading from root directory first, then evaluation directory
-    load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'backend', '.env'))
+    load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
     load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 except ImportError:
     print("Warning: python-dotenv not installed. Install with: pip install python-dotenv")
